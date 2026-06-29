@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mrp_production_form_inherit" model="ir.ui.view">
+        <field name="name">mrp.production.form.inherit</field>
+        <field name="model">mrp.production</field>
+        <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_confirm']" position="after">
+                <button name="action_check_shortages" 
+                        type="object" 
+                        string="Check Shortages" 
+                        class="btn-secondary"
+                        help="Check for component shortages in BOM hierarchy"/>
+                <button name="action_print_shortage_report" 
+                        type="object" 
+                        string="Shortage Report" 
+                        class="btn-secondary"
+                        help="Print Component Shortage Analysis Report"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Component Shortage Analysis">
+                    <group>
+                        <field name="has_recursive_shortage" invisible="1"/>
+                        <field name="shortage_line_ids" nolabel="1">
+                            <list string="Shortages" editable="bottom">
+                                <!-- <field name="level"/> -->
+                                <field name="product_id"/>
+                                <field name="required_qty"/>
+                                <field name="available_qty"/>
+                                <field name="shortage_qty" decoration-danger="shortage_qty > 0" decoration-success="shortage_qty == 0"/>
+                                <field name="location_details" string="Stock Locations" optional="hide"/>
+                                <field name="component_path" optional="hide"/>
+                                <!-- <field name="missing_stage"/> -->
+                                <field name="is_raw_material" optional="hide"/>
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

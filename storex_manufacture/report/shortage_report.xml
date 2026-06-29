@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Document Layout template -->
+    <template id="document_component_shortage" >
+        <t t-call="web.basic_layout">
+            <div>
+                <div class="o_boxed_header">
+                    <div class="row mb-2">
+                        <div class="col-12 text-end mb-2">
+                            <img t-if="res_company.logo" t-att-src="image_data_uri(res_company.logo)" alt="Logo" style="max-height: 80px;"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <t t-out="0"/>
+            </div>
+            <div t-attf-class="footer o_company_#{res_company.id}_layout {{report_type != 'pdf' and 'mt-auto'}}">
+                <div class="o_footer_content d-flex border-top pt-2">
+                    <div class="text-end text-muted">
+                        <div t-if="report_type == 'pdf' and display_name_in_footer" t-out="o.name">(document name)</div>
+                        <div t-if="report_type == 'pdf'">Page <span class="page"/> / <span class="topage"/></div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Report Template -->
+    <template id="report_mrp_shortage_template">
+        <t t-call="web.html_container">
+            <div class="container mt-4">
+                <t t-foreach="docs" t-as="mo">
+                    <t t-call="storex_manufacture.document_component_shortage">
+                        <div class="page">
+                            <!-- Header -->
+                            <div class="row mb-4">
+                                <div class="col-8">
+                                    <h2>Component Shortage Analysis Report</h2>
+                                    <h4 class="text-muted">Manufacturing Order: <t t-esc="mo.name"/></h4>
+                                </div>
+                            </div>
+
+                            <!-- MO Details -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <table class="table table-sm table-bordered">
+                                        <tr>
+                                            <th width="40%">Product</th>
+                                            <td><t t-esc="mo.product_id.display_name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Quantity to Produce</th>
+                                            <td><t t-esc="'{:,.2f}'.format(mo.product_qty)"/> <t t-esc="mo.product_uom_id.name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Bill of Materials</th>
+                                            <td><t t-esc="mo.bom_id.display_name or 'N/A'"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Scheduled Date</th>
+                                            <td><t t-esc="mo.date_start.strftime('%d-%m-%Y') if mo.date_start else 'Not scheduled'"/></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Summary Section -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <div class="alert alert-info">
+                                        <strong>Summary:</strong>
+                                        <ul>
+                                            <li>Total Components: <t t-esc="len(mo.shortage_line_ids)"/></li>
+                                            <li>Components with Shortage: 
+                                                <t t-set="shortage_count" t-value="0"/>
+                                                <t t-foreach="mo.shortage_line_ids" t-as="line">
+                                                    <t t-if="line.shortage_qty > 0">
+                                                        <t t-set="shortage_count" t-value="shortage_count + 1"/>
+                                                    </t>
+                                                </t>
+                                                <t t-esc="shortage_count"/>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Raw Material Section (Only components with shortage) -->
+                            <div class="row mb-4" style="page-break-inside: avoid;">
+                                <div class="col-md-12">
+                                    <h3 class="bg-secondary text-white p-2">Raw Material Section</h3>
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="font-weight:bold;">Component</th>
+                                                <th class="text-right" style="font-weight:bold;">Required Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Available Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Shortage Qty</th>
+                                                <th style="font-weight:bold;">Location Details</th>
+                                                <th style="font-weight:bold;">Component Path</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-set="has_raw_materials" t-value="0"/>
+                                            <t t-foreach="mo.shortage_line_ids" t-as="line">
+                                                <t t-if="line.is_raw_material == True and line.shortage_qty > 0">
+                                                    <t t-set="has_raw_materials" t-value="1"/>
+                                                    <tr class="table-danger">
+                                                        <td><t t-esc="line.product_id.display_name"/> [Raw Material]</td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.required_qty)"/></td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.available_qty)"/></td>
+                                                        <td class="text-right">
+                                                            <strong class="text-danger">
+                                                                <t t-esc="'{:,.2f}'.format(line.shortage_qty)"/>
+                                                            </strong>
+                                                        </td>
+                                                        <td><t t-esc="line.location_details or 'No stock'"/></td>
+                                                        <td><t t-esc="line.component_path"/></td>
+                                                        
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                            <t t-if="has_raw_materials == 0">
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-muted">No raw material shortages found</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Buffing Location Section (Only components with shortage) -->
+                            <div class="row mb-4" style="page-break-inside: avoid;">
+                                <div class="col-md-12">
+                                    <h3 class="bg-secondary text-white p-2">Buffing Section</h3>
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="font-weight:bold;">Component</th>
+                                                <th class="text-right" style="font-weight:bold;">Required Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Available Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Shortage Qty</th>
+                                                <th style="font-weight:bold;">Location Details</th>
+                                                <th style="font-weight:bold;">Component Path</th>
+                                                <!-- <th>Status</th> -->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-set="has_buffing" t-value="0"/>
+                                            <t t-foreach="mo.shortage_line_ids" t-as="line">
+                                                <t t-if="line.is_raw_material == False and line.shortage_qty > 0 and 'buff' in (line.location_details or '').lower()">
+                                                    <t t-set="has_buffing" t-value="1"/>
+                                                    <tr class="table-danger">
+                                                        <td><t t-esc="line.product_id.display_name"/> [Buffing]</td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.required_qty)"/></td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.available_qty)"/></td>
+                                                        <td class="text-right">
+                                                            <strong class="text-danger">
+                                                                <t t-esc="'{:,.2f}'.format(line.shortage_qty)"/>
+                                                            </strong>
+                                                        </td>
+                                                        <td><t t-esc="line.location_details or 'No stock'"/></td>
+                                                        <td><t t-esc="line.component_path"/></td>
+                                                            <!-- <td>
+                                                                <span class="badge badge-danger">Shortage</span>
+                                                            </td> -->
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                            <t t-if="has_buffing == 0">
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-muted">No buffing component shortages found</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Turning Location Section (Only components with shortage) -->
+                            <div class="row mb-4" style="page-break-inside: avoid;">
+                                <div class="col-md-12">
+                                    <h3 class="bg-secondary text-white p-2">Turning Section</h3>
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="font-weight:bold;">Component</th>
+                                                <th class="text-right" style="font-weight:bold;">Required Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Available Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Shortage Qty</th>
+                                                <th style="font-weight:bold;">Location Details</th>
+                                                <th style="font-weight:bold;">Component Path</th>
+                                                <!-- <th>Status</th> -->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-set="has_turning" t-value="0"/>
+                                            <t t-foreach="mo.shortage_line_ids" t-as="line">
+                                                <t t-if="line.is_raw_material == False and line.shortage_qty > 0 and 'turn' in (line.location_details or '').lower()">
+                                                    <t t-set="has_turning" t-value="1"/>
+                                                    <tr class="table-danger">
+                                                        <td><t t-esc="line.product_id.display_name"/> [Turning]</td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.required_qty)"/></td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.available_qty)"/></td>
+                                                        <td class="text-right">
+                                                            <strong class="text-danger">
+                                                                <t t-esc="'{:,.2f}'.format(line.shortage_qty)"/>
+                                                            </strong>
+                                                        </td>
+                                                        <td><t t-esc="line.location_details or 'No stock'"/></td>
+                                                        <td><t t-esc="line.component_path"/></td>
+                                                        <!-- <td>
+                                                            <span class="badge badge-danger">Shortage</span>
+                                                        </td> -->
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                            <t t-if="has_turning == 0">
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-muted">No turning component shortages found</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Chroming Location Section (Only components with shortage) -->
+                            <div class="row mb-4" style="page-break-inside: avoid;">
+                                <div class="col-md-12">
+                                    <h3 class="bg-secondary text-white p-2">Chroming Section</h3>
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="font-weight:bold;">Component</th>
+                                                <th class="text-right" style="font-weight:bold;">Required Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Available Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Shortage Qty</th>
+                                                <th style="font-weight:bold;">Location Details</th>
+                                                <th style="font-weight:bold;">Component Path</th>
+                                                <!-- <th>Status</th> -->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-set="has_chroming" t-value="0"/>
+                                            <t t-foreach="mo.shortage_line_ids" t-as="line">
+                                                <t t-if="line.is_raw_material == False and line.shortage_qty > 0 and ('chrom' in (line.location_details or '').lower() or 'plate' in (line.location_details or '').lower())">
+                                                    <t t-set="has_chroming" t-value="1"/>
+                                                    <tr class="table-danger">
+                                                        <td><t t-esc="line.product_id.display_name"/> [Chroming]</td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.required_qty)"/></td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.available_qty)"/></td>
+                                                        <td class="text-right">
+                                                            <strong class="text-danger">
+                                                                <t t-esc="'{:,.2f}'.format(line.shortage_qty)"/>
+                                                            </strong>
+                                                        </td>
+                                                        <td><t t-esc="line.location_details or 'No stock'"/></td>
+                                                        <td><t t-esc="line.component_path"/></td>
+                                                        <!-- <td>
+                                                            <span class="badge badge-danger">Shortage</span>
+                                                        </td> -->
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                            <t t-if="has_chroming == 0">
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-muted">No chroming component shortages found</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Coating Section (Only components with shortage) -->
+                            <div class="row mb-4" style="page-break-inside: avoid;">
+                                <div class="col-md-12">
+                                    <h3 class="bg-secondary text-white p-2">Coating Section</h3>
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="font-weight:bold;">Component</th>
+                                                <th class="text-right" style="font-weight:bold;">Required Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Available Qty</th>
+                                                <th class="text-right" style="font-weight:bold;">Shortage Qty</th>
+                                                <th style="font-weight:bold;">Location Details</th>
+                                                <th style="font-weight:bold;">Component Path</th>
+                                                <!-- <th>Status</th> -->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-set="has_coating_items" t-value="0"/>
+                                            <t t-foreach="mo.shortage_line_ids" t-as="line">
+                                                <t t-if="line.is_raw_material == False and line.shortage_qty > 0 and 'stock' in (line.location_details or '').lower()">
+                                                    <t t-set="has_coating_items" t-value="1"/>
+                                                    <tr class="table-danger">
+                                                        <td><t t-esc="line.product_id.display_name"/> [Coating]</td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.required_qty)"/></td>
+                                                        <td class="text-right"><t t-esc="'{:,.2f}'.format(line.available_qty)"/></td>
+                                                        <td class="text-right">
+                                                            <strong class="text-danger">
+                                                                <t t-esc="'{:,.2f}'.format(line.shortage_qty)"/>
+                                                            </strong>
+                                                        </td>
+                                                        <td><t t-esc="line.location_details or 'No stock'"/></td>
+                                                        <td><t t-esc="line.component_path"/></td>
+                                                        <!-- <td>
+                                                            <span class="badge badge-danger">Shortage</span>
+                                                        </td> -->
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                            <t t-if="has_coating_items == 0">
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-muted">No coating component shortages found</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- Paper Format -->
+    <record id="paperformat_component_shortage" model="report.paperformat">
+        <field name="name">COMPONENT SHORTAGE</field>
+        <field name="default" eval="True" />
+        <field name="format">A4</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">15</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">2</field>
+        <field name="margin_right">2</field>
+        <field name="header_line" eval="False" />
+        <field name="header_spacing">10</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <!-- Report Action -->
+    <record id="action_report_mrp_shortage" model="ir.actions.report">
+        <field name="name">Component Shortage Report</field>
+        <field name="model">mrp.production</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">storex_manufacture.report_mrp_shortage_template</field>
+        <field name="report_file">storex_manufacture.report_mrp_shortage_template</field>
+        <field name="binding_model_id" ref="mrp.model_mrp_production"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="storex_manufacture.paperformat_component_shortage"/>
+        <field name="print_report_name">'Shortage_Report_%s' % (object.name)</field>
+    </record>
+</odoo>

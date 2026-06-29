@@ -1,0 +1,134 @@
+<odoo>
+    <!-- PRODUCT TEMPLATE FORM -->
+    <record id="view_product_product_form_inherit_threshold" model="ir.ui.view">
+        <field name="name">product.product.form.threshold</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='type']" position="after">
+                <field name="threshold_qty"/>
+                <field name="is_finished_product"/>
+                <field name="manufacturable_qty" 
+                          />
+                    <field name="manufacturable_qty_uom" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- PRODUCT PRODUCT FORM -->
+    <record id="view_product_template_form_inherit_threshold" model="ir.ui.view">
+        <field name="name">product.template.form.threshold</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='type']" position="after">
+                <field name="threshold_qty"/>
+                <field name="is_finished_product"/>
+                <field name="manufacturable_qty" 
+                           />
+                    <field name="manufacturable_qty_uom" invisible="1"/>
+                   
+            </xpath>
+        </field>
+    </record>
+
+    <!-- PRODUCT TEMPLATE TREE -->
+    <record id="product_template_tree_view_threshold" model="ir.ui.view">
+        <field name="name">product.template.tree.threshold</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='qty_available']" position="after">
+                <field name="threshold_qty" optional="1"/>
+                <field name="alert_state" column_invisible="0"/>
+            </xpath>
+
+            <xpath expr="//field[@name='list_price']" position="before">
+                <field name="is_finished_product"/>
+                <field name="manufacturable_qty"/>
+            </xpath>
+            
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-danger">
+                    alert_state == True
+                </attribute>
+                <attribute name="decoration-bf">
+                    alert_state == True
+                </attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- PRODUCT PRODUCT TREE -->
+    <record id="product_product_tree_view_threshold" model="ir.ui.view">
+        <field name="name">product.product.tree.threshold</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_product_tree_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='qty_available']" position="after">
+                <field name="threshold_qty" optional="1"/>
+                <field name="alert_state" column_invisible="0"/>
+            </xpath>
+
+            <xpath expr="//field[@name='lst_price']" position="before">
+                <field name="is_finished_product"/>
+                <field name="manufacturable_qty"/>
+            </xpath>
+
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-danger">
+                    alert_state == True
+                </attribute>
+                <attribute name="decoration-bf">
+                    alert_state == True
+                </attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Add manufacturable quantity to product product kanban view -->
+        <record id="view_product_product_kanban_manufacturable" model="ir.ui.view">
+            <field name="name">product.product.kanban.manufacturable</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.product_kanban_view"/>
+            <field name="arch" type="xml">
+                 <xpath expr="//main" position="inside">
+                    <div class="o_kanban_primary_bottom">
+                        <div class="o_kanban_primary_bottom">
+                            <strong>Manufacturable:</strong>
+                            <field name="manufacturable_qty" 
+                                   class="oe_kanban_global_click"
+                                   decoration-success="manufacturable_qty &gt; 0"
+                                   decoration-danger="manufacturable_qty == 0"/>
+                            <field name="manufacturable_qty_uom" invisible="1"/>
+                        </div>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Add manufacturable quantity to product template kanban view -->
+        <record id="view_product_template_kanban_manufacturable" model="ir.ui.view">
+            <field name="name">product.template.kanban.manufacturable</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_kanban_view"/>
+            <field name="arch" type="xml">
+                 <xpath expr="//main" position="inside">
+                    <div class="o_kanban_primary_bottom">
+                        <div class="o_kanban_primary_bottom">
+                            <strong>Manufacturable:</strong>
+                            <field name="manufacturable_qty" 
+                                   class="oe_kanban_global_click"
+                                   decoration-success="manufacturable_qty &gt; 0"
+                                   decoration-danger="manufacturable_qty == 0"/>
+                            <field name="manufacturable_qty_uom" invisible="1"/>
+                        </div>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+</odoo>

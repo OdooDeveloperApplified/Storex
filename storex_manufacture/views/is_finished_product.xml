@@ -1,0 +1,55 @@
+<odoo>
+    <!-- Create a completely new standalone view -->
+    <record id="view_product_product_finished_list" model="ir.ui.view">
+        <field name="name">product.product.finished.list</field>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+           
+            <list string="Product Variants" multi_edit="1" duplicate="false" sample="1">
+                <header>
+                    <button string="Print Labels" type="object" name="action_open_label_layout"/>
+                </header>
+                    <field name="is_favorite" widget="boolean_favorite" nolabel="1" readonly="1"/>
+                    <field name="default_code" optional="hide" readonly="1"/>
+                    <field name="barcode" optional="hide" readonly="1"/>
+                    <field name="name" readonly="1"/>
+                    <field name="product_template_variant_value_ids" widget="many2many_tags" groups="product.group_product_variant" readonly="1"/>
+                    <field name="company_id" groups="base.group_multi_company" optional="hide" readonly="1"/>
+                    <field name="lst_price" optional="hide" string="Sales Price"/>
+                    <field name="standard_price" column_invisible="True"/>
+                    <field name="categ_id" optional="hide"/>
+                    <field name="product_tag_ids" widget="many2many_tags" readonly="1" optional="hide"/>
+                    <field name="additional_product_tag_ids" widget="many2many_tags" optional="hide"/>
+                    <field name="type" optional="hide" readonly="1"/>
+                    <field name="uom_id" string="Unit" groups="uom.group_uom" optional="show" readonly="1"/>
+                    <field name="product_tmpl_id" readonly="1" column_invisible="True"/>
+                    <field name="active" column_invisible="True"/>
+            </list>
+          
+        </field>
+    </record>
+
+    <!-- Add the action to open this view -->
+    <record id="action_product_finished_list" model="ir.actions.act_window">
+        <field name="name">Finished Products</field>
+        <field name="res_model">product.product</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_finished_product', '=', True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create finished products
+            </p>
+            <p>
+                Products marked as finished goods can be manufactured through
+                manufacturing orders.
+            </p>
+        </field>
+    </record>
+
+    <!-- Add menu item -->
+    <menuitem id="menu_product_finished_list" 
+            name="Finished Products" 
+            action="action_product_finished_list" 
+            parent="stock.menu_warehouse_report"
+            sequence="10"/>
+</odoo>
