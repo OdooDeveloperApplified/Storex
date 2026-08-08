@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_inherit_shortage" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.shortage</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add buttons to the sale order line list view -->
+            <xpath expr="//field[@name='order_line']/list/field[@name='name']" position="after">
+                <button name="action_view_shortages"
+                        type="object"
+                        icon="fa-list"
+                        string="View"
+                        class="btn-primary"/>
+                <button name="action_print_shortage_report"
+                        type="object"
+                        icon="fa-print"
+                        string="Report"
+                        class="btn-secondary"/>
+                <button name="action_check_shortages"
+                        type="object"
+                        icon="fa-refresh"
+                        string="Re-check"
+                        class="btn-warning"/>
+                
+            </xpath>
+            
+            <!-- Add notebook page to the sale order line form view -->
+            <xpath expr="//field[@name='order_line']/form/field[@name='company_id']" position="after">
+                <notebook>
+                    <page string="Component Shortage Analysis">
+                        <group>
+                            <field name="has_recursive_shortage" invisible="1"/>
+                            <field name="shortage_line_ids" nolabel="1">
+                                <list string="Shortages" editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="required_qty"/>
+                                    <field name="available_qty"/>
+                                    <field name="shortage_qty" decoration-danger="shortage_qty &gt; 0" decoration-success="shortage_qty == 0"/>
+                                    <field name="location_details" string="Stock Locations" optional="hide"/>
+                                    <field name="component_path" optional="hide"/>
+                                    <field name="is_raw_material" optional="hide"/>
+                                </list>
+                            </field>
+                        </group>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_sale_order_shortage_line_tree" model="ir.ui.view">
+        <field name="name">sale.order.shortage.line.tree</field>
+        <field name="model">sale.order.shortage.line</field>
+        <field name="arch" type="xml">
+            <list string="Component Shortages" create="false" edit="false" delete="false">
+                <field name="product_id"/>
+                <field name="required_qty"/>
+                <field name="available_qty"/>
+                <field name="shortage_qty" decoration-danger="shortage_qty &gt; 0" decoration-success="shortage_qty == 0"/>
+                <field name="location_details" optional="hide"/>
+                <field name="component_path" optional="hide"/>
+            </list>
+        </field>
+    </record>
+</odoo>
